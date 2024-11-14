@@ -9,7 +9,7 @@ import stateDropdown from "./dropdowns/filter-state.html";
 import chargerIcon from "../static/charger.svg";
 import locationIcon from "../static/location_on.svg";
 import arrowDownIcon from "../static/arrow_drop_down.svg";
-import checkIcon from "../static/check_small.svg";
+import { stateMapper } from "./utils";
 
 const filterDropdowns = [typeDropdown, sizeDropdown, stateDropdown];
 
@@ -56,14 +56,6 @@ export class OSMap extends HTMLElement {
 
     filterDropdowns.forEach((template) => {
       dropdownsContainer.innerHTML += template;
-    });
-
-    this.querySelectorAll(".os-map-check-icon").forEach((imgTag) => {
-      imgTag.src = checkIcon;
-    });
-
-    this.querySelectorAll(".os-map-arrow").forEach((imgTag) => {
-      imgTag.src = arrowDownIcon;
     });
 
     // Build map container
@@ -257,7 +249,7 @@ export class OSMap extends HTMLElement {
   }
 
   setupFilters() {
-    const setupDropdown = (containerId) => {
+    const setupDropdown = (containerId, type) => {
       const container = document.getElementById(containerId);
       const dropdownToggle = container.querySelector(".os-map-dropdown-toggle");
       const dropdownMenu = container.querySelector(".os-map-dropdown-menu");
@@ -273,7 +265,7 @@ export class OSMap extends HTMLElement {
 
           if (menuRect.right > viewportWidth) {
             const overflow = menuRect.right - viewportWidth;
-            dropdownMenu.style.left = `-${overflow + 5}px`;
+            dropdownMenu.style.left = `-${overflow + 25}px`;
           }
         } else {
           dropdownMenu.style.left = "";
@@ -292,12 +284,30 @@ export class OSMap extends HTMLElement {
 
       dropdownMenu.addEventListener("click", (e) => e.stopPropagation());
 
+      const dropdownItems = [ ...new Set(this.originalData.features.map((feature) => {
+        return feature.properties[type];
+      }).sort())];
+
+      dropdownItems.forEach((value) => {
+        const itemHTML = `
+          <label class="os-map-dropdown-item">
+            <input type="checkbox" value="${value}" />
+            <span class="os-map-empty-checkbox"></span>
+            <span class="os-map-check-icon"></span>
+            <span class="${type === "type" ? "os-map-badge " + value.toLowerCase() : ""}">
+              ${type === "state" ? stateMapper[value] : value}
+            </span>
+          </label>
+        `;
+        dropdownMenu.innerHTML += itemHTML;
+      });
+
       return container.querySelectorAll("input[type=checkbox]");
     };
 
-    const typeCheckboxes = setupDropdown("os-map-filter-type");
-    const sizeCheckboxes = setupDropdown("os-map-filter-size");
-    const stateCheckboxes = setupDropdown("os-map-filter-state");
+    const typeCheckboxes = setupDropdown("os-map-filter-type", "type");
+    const sizeCheckboxes = setupDropdown("os-map-filter-size", "size");
+    const stateCheckboxes = setupDropdown("os-map-filter-state", "state");
 
     typeCheckboxes.forEach((input) => {
       input.addEventListener("change", (event) => {
