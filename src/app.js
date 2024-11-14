@@ -40,7 +40,8 @@ export class OSMap extends HTMLElement {
     const mapLongitude = this.getAttribute("data-os-map-lng");
     const mapZoom = this.getAttribute("data-os-map-zoom");
     const mapStyle = this.getAttribute("data-os-map-style");
-    const mapLock = this.getAttribute("data-os-map-lock") === "true";
+    const hasMapLockAttribute = this.hasAttribute("data-os-map-lock");
+    const mapLock = hasMapLockAttribute && this.getAttribute("data-os-map-lock");
 
     // Build filter dropdowns
     const filtersContainer = document.createElement("div");
@@ -81,7 +82,7 @@ export class OSMap extends HTMLElement {
       center: [parseFloat(mapLongitude), parseFloat(mapLatitude)],
       zoom: parseFloat(mapZoom),
       style: mapStyle,
-      scrollZoom: !mapLock,
+      cooperativeGestures: hasMapLockAttribute && mapLock !== "false",
     });
 
     this.map.on("load", () => {
