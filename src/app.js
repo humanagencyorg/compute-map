@@ -17,6 +17,7 @@ export class OSMap extends HTMLElement {
   static defaultStylesAdded = false;
   map = null;
   originalData = null;
+  mapRefocus = false;
   selectedTypes = [];
   selectedSizes = [];
   selectedStates = [];
@@ -41,6 +42,10 @@ export class OSMap extends HTMLElement {
     const mapZoom = this.getAttribute("data-os-map-zoom");
     const mapStyle = this.getAttribute("data-os-map-style");
     const mapLock = this.getAttribute("data-os-map-lock") === "true";
+    const hasMapRefocusAttr = this.hasAttribute("data-os-map-refocus");
+    const mapRefocusAttrValue =
+      hasMapRefocusAttr && this.getAttribute("data-os-map-refocus");
+    this.mapRefocus = hasMapRefocusAttr && mapRefocusAttrValue !== "false";
 
     // Build filter dropdowns
     const filtersContainer = document.createElement("div");
@@ -352,10 +357,12 @@ export class OSMap extends HTMLElement {
       const clusterId = features[0].properties.cluster_id;
       const clusterCenter = features[0].geometry.coordinates;
 
-      map.easeTo({
-        center: clusterCenter,
-        duration: 500,
-      });
+      if (this.mapRefocus) {
+        map.easeTo({
+          center: clusterCenter,
+          duration: 500,
+        });
+      }
 
       map.setPaintProperty("clusters", "circle-opacity", [
         "case",
