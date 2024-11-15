@@ -51,3 +51,13 @@ export const stateMapper = {
   WY: "Wyoming",
   DC: "District of Columbia",
 };
+export const availableMapProjections = [
+  "albers",
+  "equalEarth",
+  "equirectangular",
+  "lambertConformalConic",
+  "mercator",
+  "naturalEarth",
+  "winkelTripel",
+  "globe",
+];
