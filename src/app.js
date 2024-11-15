@@ -295,7 +295,7 @@ export class OSMap extends HTMLElement {
             <span class="os-map-empty-checkbox"></span>
             <span class="os-map-check-icon"></span>
             <span class="${type === "type" ? "os-map-badge " + value.toLowerCase() : ""}">
-              ${type === "state" ? stateMapper[value] : value}
+              ${type === "state" ? stateMapper[value.trim()] : value}
             </span>
           </label>
         `;
