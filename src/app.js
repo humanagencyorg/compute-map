@@ -10,6 +10,7 @@ import chargerIcon from "../static/charger.svg";
 import locationIcon from "../static/location_on.svg";
 import arrowDownIcon from "../static/arrow_drop_down.svg";
 import checkIcon from "../static/check_small.svg";
+import { availableMapProjections } from "./utils";
 
 const filterDropdowns = [typeDropdown, sizeDropdown, stateDropdown];
 
@@ -37,15 +38,38 @@ export class OSMap extends HTMLElement {
     const id = this.getAttribute("data-os-map-id") || "map";
     const endpoint = this.getAttribute("data-os-map-endpoint");
     const key = this.getAttribute("data-os-map-key");
-    const mapLatitude = this.getAttribute("data-os-map-lat");
-    const mapLongitude = this.getAttribute("data-os-map-lng");
-    const mapZoom = this.getAttribute("data-os-map-zoom");
     const mapStyle = this.getAttribute("data-os-map-style");
     const mapLock = this.getAttribute("data-os-map-lock") === "true";
+    const mapProjection = this.getAttribute("data-os-map-projection");
+    const mapLatitude = parseFloat(this.getAttribute("data-os-map-lat"));
+    const mapLongitude = parseFloat(this.getAttribute("data-os-map-lng"));
+    const mapZoom = parseFloat(this.getAttribute("data-os-map-zoom"));
+    const mapBoundWest = parseFloat(
+      this.getAttribute("data-os-map-bound-west"),
+    );
+    const mapBoundSouth = parseFloat(
+      this.getAttribute("data-os-map-bound-south"),
+    );
+    const mapBoundEast = parseFloat(
+      this.getAttribute("data-os-map-bound-east"),
+    );
+    const mapBoundNorth = parseFloat(
+      this.getAttribute("data-os-map-bound-north"),
+    );
     const hasMapRefocusAttr = this.hasAttribute("data-os-map-refocus");
     const mapRefocusAttrValue =
       hasMapRefocusAttr && this.getAttribute("data-os-map-refocus");
     this.mapRefocus = hasMapRefocusAttr && mapRefocusAttrValue !== "false";
+
+    const mapCenter =
+      mapLongitude && mapLatitude ? [mapLongitude, mapLatitude] : null;
+    const maxBounds =
+      mapBoundWest && mapBoundSouth && mapBoundEast && mapBoundNorth
+        ? [
+            [mapBoundWest, mapBoundSouth],
+            [mapBoundEast, mapBoundNorth],
+          ]
+        : null;
 
     // Build filter dropdowns
     const filtersContainer = document.createElement("div");
@@ -83,11 +107,20 @@ export class OSMap extends HTMLElement {
     mapboxgl.accessToken = key;
     this.map = new mapboxgl.Map({
       container: id,
-      center: [parseFloat(mapLongitude), parseFloat(mapLatitude)],
-      zoom: parseFloat(mapZoom),
+      zoom: mapZoom || null,
       style: mapStyle,
       scrollZoom: !mapLock,
+      projection: {
+        name: availableMapProjections.includes(mapProjection)
+          ? mapProjection
+          : "mercator",
+      },
+      maxBounds: maxBounds,
     });
+
+    if (mapCenter) {
+      this.map.setCenter(mapCenter);
+    }
 
     this.map.on("load", () => {
       if (endpoint) {
