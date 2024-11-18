@@ -301,6 +301,11 @@ export class OSMap extends HTMLElement {
       const container = document.getElementById(containerId);
       const dropdownToggle = container.querySelector(".os-map-dropdown-toggle");
       const dropdownMenu = container.querySelector(".os-map-dropdown-menu");
+      const menuList = container.querySelector(".os-map-dropdown-menu-list");
+      const resetButton = container.querySelector(
+        ".os-map-filter-reset-button",
+      );
+      const countElement = container.querySelector(".os-map-filter-count");
       const arrow = dropdownToggle.querySelector(".os-map-arrow");
 
       dropdownToggle.addEventListener("click", () => {
@@ -353,17 +358,48 @@ export class OSMap extends HTMLElement {
             </span>
           </label>
         `;
-        dropdownMenu.innerHTML += itemHTML;
+        menuList.innerHTML += itemHTML;
       });
 
-      return container.querySelectorAll("input[type=checkbox]");
+      const checkboxes = container.querySelectorAll("input[type=checkbox]");
+
+      resetButton.addEventListener("click", () => {
+        checkboxes.forEach((checkbox) => {
+          checkbox.checked = false;
+        });
+
+        if (type === "type") {
+          this.selectedTypes = [];
+        } else if (type === "size") {
+          this.selectedSizes = [];
+        } else if (type === "state") {
+          this.selectedStates = [];
+        }
+
+        const filteredData = this.getFilteredData();
+        this.map.getSource("locations").setData(filteredData);
+        countElement.innerHTML = "";
+      });
+
+      return {
+        countElement: countElement,
+        checkboxes: checkboxes,
+      };
     };
 
-    const typeCheckboxes = setupDropdown("os-map-filter-type", "type");
-    const sizeCheckboxes = setupDropdown("os-map-filter-size", "size");
-    const stateCheckboxes = setupDropdown("os-map-filter-state", "state");
+    const typeFilterSetup = setupDropdown("os-map-filter-type", "type");
+    const sizeFilterSetup = setupDropdown("os-map-filter-size", "size");
+    const stateFilterSetup = setupDropdown("os-map-filter-state", "state");
 
-    typeCheckboxes.forEach((input) => {
+    const setCount = (element, count) => {
+      if (count === 0) {
+        element.innerHTML = "";
+      } else {
+        element.innerHTML = `(${count})`;
+      }
+    };
+
+    typeFilterSetup.checkboxes.forEach((input) => {
       input.addEventListener("change", (event) => {
         if (event.target.checked) {
           this.selectedTypes.push(event.target.value);
@@ -374,10 +410,11 @@ export class OSMap extends HTMLElement {
         }
         const filteredData = this.getFilteredData();
         this.map.getSource("locations").setData(filteredData);
+        setCount(typeFilterSetup.countElement, this.selectedTypes.length);
       });
     });
 
-    sizeCheckboxes.forEach((input) => {
+    sizeFilterSetup.checkboxes.forEach((input) => {
       input.addEventListener("change", (event) => {
         if (event.target.checked) {
           this.selectedSizes.push(event.target.value);
@@ -388,10 +425,11 @@ export class OSMap extends HTMLElement {
         }
         const filteredData = this.getFilteredData();
         this.map.getSource("locations").setData(filteredData);
+        setCount(sizeFilterSetup.countElement, this.selectedSizes.length);
       });
     });
 
-    stateCheckboxes.forEach((input) => {
+    stateFilterSetup.checkboxes.forEach((input) => {
       input.addEventListener("change", (event) => {
         if (event.target.checked) {
           this.selectedStates.push(event.target.value);
@@ -402,6 +440,7 @@ export class OSMap extends HTMLElement {
         }
         const filteredData = this.getFilteredData();
         this.map.getSource("locations").setData(filteredData);
+        setCount(stateFilterSetup.countElement, this.selectedStates.length);
       });
     });
   }
