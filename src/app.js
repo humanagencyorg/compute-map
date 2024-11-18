@@ -18,6 +18,7 @@ export class OSMap extends HTMLElement {
   map = null;
   originalData = null;
   mapRefocus = false;
+  maxBounds = null;
   selectedTypes = [];
   selectedSizes = [];
   selectedStates = [];
@@ -35,11 +36,15 @@ export class OSMap extends HTMLElement {
     }
 
     const id = this.getAttribute("data-os-map-id") || "map";
-    const endpoint = this.getAttribute("data-os-map-endpoint") || this.getAttribute("data-os-endpoint");
-    const key = this.getAttribute("data-os-map-key") || this.getAttribute("data-os-key");
+    const endpoint =
+      this.getAttribute("data-os-map-endpoint") ||
+      this.getAttribute("data-os-endpoint");
+    const key =
+      this.getAttribute("data-os-map-key") || this.getAttribute("data-os-key");
     const mapStyle = this.getAttribute("data-os-map-style");
     const hasMapLockAttribute = this.hasAttribute("data-os-map-lock");
-    const mapLock = hasMapLockAttribute && this.getAttribute("data-os-map-lock");
+    const mapLock =
+      hasMapLockAttribute && this.getAttribute("data-os-map-lock");
     const mapProjection = this.getAttribute("data-os-map-projection");
     const mapLatitude = parseFloat(this.getAttribute("data-os-map-lat"));
     const mapLongitude = parseFloat(this.getAttribute("data-os-map-lng"));
@@ -63,7 +68,7 @@ export class OSMap extends HTMLElement {
 
     const mapCenter =
       mapLongitude && mapLatitude ? [mapLongitude, mapLatitude] : null;
-    const maxBounds =
+    this.maxBounds =
       mapBoundWest && mapBoundSouth && mapBoundEast && mapBoundNorth
         ? [
             [mapBoundWest, mapBoundSouth],
@@ -108,7 +113,7 @@ export class OSMap extends HTMLElement {
           ? mapProjection
           : "mercator",
       },
-      maxBounds: maxBounds,
+      maxBounds: this.maxBounds,
     });
 
     if (mapCenter) {
@@ -255,6 +260,10 @@ export class OSMap extends HTMLElement {
           },
         });
 
+        if (this.maxBounds) {
+          map.fitBounds(this.maxBounds);
+        }
+
         this.setupEventHandlers();
         this.setupFilters();
       })
@@ -323,9 +332,15 @@ export class OSMap extends HTMLElement {
 
       dropdownMenu.addEventListener("click", (e) => e.stopPropagation());
 
-      const dropdownItems = [ ...new Set(this.originalData.features.map((feature) => {
-        return feature.properties[type];
-      }).sort())];
+      const dropdownItems = [
+        ...new Set(
+          this.originalData.features
+            .map((feature) => {
+              return feature.properties[type];
+            })
+            .sort(),
+        ),
+      ];
 
       dropdownItems.forEach((value) => {
         const itemHTML = `
@@ -393,6 +408,30 @@ export class OSMap extends HTMLElement {
 
   setupEventHandlers() {
     const map = this.map;
+
+    if (this.maxBounds) {
+      let debounceTimer;
+      window.addEventListener("resize", () => {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+          map.fitBounds(this.maxBounds);
+        }, 300);
+      });
+    }
+
+    const openPopup = (e) => {
+      const coordinates = e.features[0].geometry.coordinates.slice();
+      const properties = e.features[0].properties;
+      const viewportWidth = window.innerWidth;
+
+      new mapboxgl.Popup({
+        offset: 20,
+        maxWidth: viewportWidth > 600 ? "350px" : "250px",
+      })
+        .setLngLat(coordinates)
+        .setHTML(this.buildPopupContent(properties))
+        .addTo(map);
+    };
 
     map.on("click", "clusters", (e) => {
       const features = map.queryRenderedFeatures(e.point, {
@@ -536,15 +575,7 @@ export class OSMap extends HTMLElement {
               },
             });
 
-            map.on("click", "expanded-cluster-points", (e) => {
-              const coordinates = e.features[0].geometry.coordinates.slice();
-              const properties = e.features[0].properties;
-
-              new mapboxgl.Popup({ offset: 20 })
-                .setLngLat(coordinates)
-                .setHTML(this.buildPopupContent(properties))
-                .addTo(map);
-            });
+            map.on("click", "expanded-cluster-points", openPopup);
           } else {
             map
               .getSource("expanded-cluster")
@@ -553,15 +584,7 @@ export class OSMap extends HTMLElement {
         });
     });
 
-    map.on("click", "unclustered-point", (e) => {
-      const coordinates = e.features[0].geometry.coordinates.slice();
-      const properties = e.features[0].properties;
-
-      new mapboxgl.Popup({ offset: 20 })
-        .setLngLat(coordinates)
-        .setHTML(this.buildPopupContent(properties))
-        .addTo(map);
-    });
+    map.on("click", "unclustered-point", openPopup);
 
     // Clean up expanded clusters when zooming
     map.on("zoom", () => {

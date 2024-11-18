@@ -83,8 +83,8 @@ The map dimensions can be controlled by setting the height and width of the `.os
 
 ```css
 .os-map-container {
-  height: 800px; /* Height is 1000px by default */
-  width: 1000px; /* Width is 100% by default */
+  height: 800px;
+  width: 1000px;
 }
 ```
 
