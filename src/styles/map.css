@@ -85,12 +85,64 @@ os-map {
   border: 1px solid #212121;
   display: none;
   z-index: 5;
+
+  @media screen and (max-width: 480px) {
+    position: fixed;
+    top: unset;
+    bottom: 0;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100%;
+    border: 0;
+
+    &::before {
+      content: "";
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: -1;
+    }
+  }
+}
+
+.os-map-dropdown-menu-header {
+  display: none;
+  background: #fff;
+  font-size: 16px;
+  font-weight: 500;
+  padding: 16px;
+  border-bottom: 1px solid rgba(28, 27, 31, 0.10);
+  border-radius: 15px 15px 0px 0px;
+
+  @media screen and (max-width: 480px) {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
 }
 
 .os-map-dropdown-menu-list {
   max-height: 274px;
   overflow-y: auto;
   padding: 16px 16px 36px;
+  background: #fff;
+
+  @media screen and (max-width: 480px) {
+    padding-bottom: 40px;
+  }
+}
+
+.os-map-filter-close-button {
+  width: 20px;
+  height: 20px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHZpZXdCb3g9IjAgMCAyMCAyMCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPG1hc2sgaWQ9Im1hc2swXzE2OV8xMzU5IiBzdHlsZT0ibWFzay10eXBlOmFscGhhIiBtYXNrVW5pdHM9InVzZXJTcGFjZU9uVXNlIiB4PSIwIiB5PSIwIiB3aWR0aD0iMjAiIGhlaWdodD0iMjAiPgo8cmVjdCB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIGZpbGw9IiNEOUQ5RDkiLz4KPC9tYXNrPgo8ZyBtYXNrPSJ1cmwoI21hc2swXzE2OV8xMzU5KSI+CjxwYXRoIGQ9Ik01LjMzMzQxIDE1LjgzMzNMNC4xNjY3NSAxNC42NjY2TDguODMzNDIgOS45OTk5Nkw0LjE2Njc1IDUuMzMzMjlMNS4zMzM0MSA0LjE2NjYzTDEwLjAwMDEgOC44MzMyOUwxNC42NjY3IDQuMTY2NjNMMTUuODMzNCA1LjMzMzI5TDExLjE2NjcgOS45OTk5NkwxNS44MzM0IDE0LjY2NjZMMTQuNjY2NyAxNS44MzMzTDEwLjAwMDEgMTEuMTY2Nkw1LjMzMzQxIDE1LjgzMzNaIiBmaWxsPSIjMUMxQjFGIi8+CjwvZz4KPC9zdmc+Cg==");
+  background-position: center;
 }
 
 .os-map-filter-count {
@@ -104,6 +156,10 @@ os-map {
   left: 0;
   right: 0;
   padding: 8px 16px;
+
+  @media screen and (max-width: 480px) {
+    padding-bottom: 16px;
+  }
 }
 
 .os-map-filter-reset-button {
@@ -127,10 +183,18 @@ os-map {
 
 #os-map-filter-size .os-map-dropdown-menu {
   width: 200px;
+
+  @media screen and (max-width: 480px) {
+    width: 100%;
+  }
 }
 
 #os-map-filter-state .os-map-dropdown-menu {
   width: 220px;
+
+  @media screen and (max-width: 480px) {
+    width: 100%;
+  }
 }
 
 .os-map-dropdown-menu.show {
@@ -221,7 +285,7 @@ os-map {
 }
 
 .os-map-popup-content-description {
-  padding: 24px 16px;
+  padding: 20px 16px 24px;
 
   h3 {
     font-size: 24px;
@@ -277,18 +341,17 @@ os-map {
   }
 
   .os-map-popup-content-image {
-    width: 350px;
+    width: 100%;
     height: 120px;
     object-fit: cover;
   }
 
-  @media (max-width: 430px) {
+  @media screen and (max-width: 480px) {
     .mapboxgl-popup-content {
       width: 250px;
     }
 
     .os-map-popup-content-image {
-      width: 250px;
       height: 100px;
     }
 
@@ -297,11 +360,11 @@ os-map {
     }
 
     .os-map-popup-content-description {
-      padding: 12px;
+      padding: 10px 12px;
     }
 
     .os-map-popup-content-footer-item {
-      font-size: 14px;
+      font-size: 12px;
     }
 
     .os-map-popup-content-footer {
@@ -309,12 +372,13 @@ os-map {
     }
 
     .os-map-popup-content-icon {
-      width: 20px;
-      height: 20px;
+      width: 16px;
+      height: 16px;
+      margin-right: 4px;
     }
 
     h3 {
-      font-size: 18px;
+      font-size: 16px;
       margin-top: 8px;
       margin-bottom: 12px;
     }

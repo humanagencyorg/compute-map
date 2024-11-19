@@ -260,9 +260,9 @@ export class OSMap extends HTMLElement {
           },
         });
 
-        if (this.maxBounds) {
-          map.fitBounds(this.maxBounds);
-        }
+        //if (this.maxBounds) {
+        //   map.fitBounds(this.maxBounds);
+        //}
 
         this.setupEventHandlers();
         this.setupFilters();
@@ -302,6 +302,9 @@ export class OSMap extends HTMLElement {
       const dropdownToggle = container.querySelector(".os-map-dropdown-toggle");
       const dropdownMenu = container.querySelector(".os-map-dropdown-menu");
       const menuList = container.querySelector(".os-map-dropdown-menu-list");
+      const closeButton = container.querySelector(
+        ".os-map-filter-close-button",
+      );
       const resetButton = container.querySelector(
         ".os-map-filter-reset-button",
       );
@@ -333,6 +336,11 @@ export class OSMap extends HTMLElement {
           dropdownMenu.classList.remove("show");
           arrow.classList.remove("rotate");
         }
+      });
+
+      closeButton.addEventListener("click", () => {
+        dropdownMenu.classList.remove("show");
+        arrow.classList.remove("rotate");
       });
 
       dropdownMenu.addEventListener("click", (e) => e.stopPropagation());
@@ -448,15 +456,15 @@ export class OSMap extends HTMLElement {
   setupEventHandlers() {
     const map = this.map;
 
-    if (this.maxBounds) {
-      let debounceTimer;
-      window.addEventListener("resize", () => {
-        clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(() => {
-          map.fitBounds(this.maxBounds);
-        }, 300);
-      });
-    }
+    //if (this.maxBounds) {
+    //  let debounceTimer;
+    //  window.addEventListener("resize", () => {
+    //    clearTimeout(debounceTimer);
+    //    debounceTimer = setTimeout(() => {
+    //       map.fitBounds(this.maxBounds);
+    //    }, 300);
+    //  });
+    //}
 
     const openPopup = (e) => {
       const coordinates = e.features[0].geometry.coordinates.slice();
