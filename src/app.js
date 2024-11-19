@@ -1,6 +1,7 @@
 import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import gjv from "geojson-validation";
+import { WebMercatorViewport } from "@math.gl/web-mercator";
 
 import mapStyles from "./styles/map.css";
 import typeDropdown from "./dropdowns/filter-type.html";
@@ -115,6 +116,18 @@ export class OSMap extends HTMLElement {
       },
       maxBounds: this.maxBounds,
     });
+
+    const container = document.querySelector(".os-map-container");
+    const viewport = new WebMercatorViewport({
+      width: container.clientWidth,
+      height: container.clientHeight,
+      longitude: mapLongitude || 0,
+      latitude: mapLatitude || 0,
+      zoom: mapZoom || 0,
+    });
+    this.bounds = viewport.getBounds();
+    window.console.log(container.clientWidth, container.clientHeight);
+    window.console.log(this.bounds);
 
     if (mapCenter) {
       this.map.setCenter(mapCenter);
@@ -260,9 +273,9 @@ export class OSMap extends HTMLElement {
           },
         });
 
-        //if (this.maxBounds) {
-        //   map.fitBounds(this.maxBounds);
-        //}
+        if (this.bounds) {
+           map.fitBounds(this.bounds);
+        }
 
         this.setupEventHandlers();
         this.setupFilters();
@@ -456,15 +469,15 @@ export class OSMap extends HTMLElement {
   setupEventHandlers() {
     const map = this.map;
 
-    //if (this.maxBounds) {
-    //  let debounceTimer;
-    //  window.addEventListener("resize", () => {
-    //    clearTimeout(debounceTimer);
-    //    debounceTimer = setTimeout(() => {
-    //       map.fitBounds(this.maxBounds);
-    //    }, 300);
-    //  });
-    //}
+    if (this.bounds) {
+      let debounceTimer;
+      window.addEventListener("resize", () => {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+           map.fitBounds(this.bounds);
+        }, 300);
+      });
+    }
 
     const openPopup = (e) => {
       const coordinates = e.features[0].geometry.coordinates.slice();
