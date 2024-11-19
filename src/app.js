@@ -72,77 +72,90 @@ export class OSMap extends HTMLElement {
     this.maxBounds =
       mapBoundWest && mapBoundSouth && mapBoundEast && mapBoundNorth
         ? [
-            [mapBoundWest, mapBoundSouth],
-            [mapBoundEast, mapBoundNorth],
-          ]
-        : null;
+          [mapBoundWest, mapBoundSouth],
+          [mapBoundEast, mapBoundNorth],
+        ]
+          : null;
 
-    // Build filter dropdowns
-    const filtersContainer = document.createElement("div");
-    const dropdownsContainer = document.createElement("div");
-    const filtersTitle = document.createElement("span");
-    filtersTitle.textContent = "Filter by:";
-    filtersContainer.appendChild(filtersTitle);
-    filtersContainer.appendChild(dropdownsContainer);
-    dropdownsContainer.classList.add("os-map-filters-dropdowns");
-    filtersTitle.classList.add("os-map-filters-title");
-    filtersContainer.classList.add("os-map-filters");
-    this.appendChild(filtersContainer);
+          // Build filter dropdowns
+          const filtersContainer = document.createElement("div");
+          const dropdownsContainer = document.createElement("div");
+          const filtersTitle = document.createElement("span");
+          filtersTitle.textContent = "Filter by:";
+          filtersContainer.appendChild(filtersTitle);
+          filtersContainer.appendChild(dropdownsContainer);
+          dropdownsContainer.classList.add("os-map-filters-dropdowns");
+          filtersTitle.classList.add("os-map-filters-title");
+          filtersContainer.classList.add("os-map-filters");
+          this.appendChild(filtersContainer);
 
-    filterDropdowns.forEach((template) => {
-      dropdownsContainer.innerHTML += template;
-    });
-
-    // Build map container
-    const mapContainer = document.createElement("div");
-    mapContainer.classList.add("os-map-container");
-
-    const mapWrapper = document.createElement("div");
-    mapWrapper.id = id;
-    mapContainer.appendChild(mapWrapper);
-    this.appendChild(mapContainer);
-
-    mapboxgl.accessToken = key;
-    this.map = new mapboxgl.Map({
-      container: id,
-      zoom: mapZoom || null,
-      style: mapStyle,
-      cooperativeGestures: hasMapLockAttribute && mapLock !== "false",
-      scrollZoom: !mapLock,
-      projection: {
-        name: availableMapProjections.includes(mapProjection)
-          ? mapProjection
-          : "mercator",
-      },
-      maxBounds: this.maxBounds,
-    });
-
-    const container = document.querySelector(".os-map-container");
-    const viewport = new WebMercatorViewport({
-      width: container.clientWidth,
-      height: container.clientHeight,
-      longitude: mapLongitude || 0,
-      latitude: mapLatitude || 0,
-      zoom: mapZoom || 0,
-    });
-    this.bounds = viewport.getBounds();
-    window.console.log(container.clientWidth, container.clientHeight);
-    window.console.log(this.bounds);
-
-    if (mapCenter) {
-      this.map.setCenter(mapCenter);
-    }
-
-    this.map.on("load", () => {
-      if (endpoint) {
-        fetch(endpoint)
-          .then((response) => response.json())
-          .then((data) => this.setData(data))
-          .catch((error) => {
-            console.error("Error loading map data:", error);
+          filterDropdowns.forEach((template) => {
+            dropdownsContainer.innerHTML += template;
           });
-      }
-    });
+
+          // Build map container
+          const mapContainer = document.createElement("div");
+          mapContainer.classList.add("os-map-container");
+
+          const mapWrapper = document.createElement("div");
+          mapWrapper.id = id;
+          mapContainer.appendChild(mapWrapper);
+          this.appendChild(mapContainer);
+
+          window.console.log("Initialization 1")
+          window.console.log("Zoom: " + mapZoom)
+          const container = document.querySelector(".os-map-container");
+          const viewport = new WebMercatorViewport({
+            width: 1500,
+            height: 800,
+            longitude: mapLongitude || 0,
+            latitude: mapLatitude || 0,
+            zoom: mapZoom || 0,
+          });
+          this.bounds = viewport.getBounds();
+          window.console.log(container.clientWidth, container.clientHeight);
+          window.console.log(this.bounds);
+
+          mapboxgl.accessToken = key;
+          this.map = new mapboxgl.Map({
+            container: id,
+            center: [viewport.longitude, viewport.latitude],
+            zoom: viewport.zoom,
+            style: mapStyle,
+            cooperativeGestures: hasMapLockAttribute && mapLock !== "false",
+            scrollZoom: !mapLock,
+            projection: {
+              name: availableMapProjections.includes(mapProjection)
+                ? mapProjection
+                : "mercator",
+            },
+            maxBounds: this.maxBounds,
+          });
+
+
+          //if (mapCenter) {
+          //  this.map.setCenter(mapCenter);
+          //}
+
+          this.map.on("load", () => {
+            window.console.log("fitting the bounds ")
+            this.map.fitBounds([
+              [this.bounds[0][0], this.bounds[0][1]], // Southwest coordinates
+              [this.bounds[1][0], this.bounds[1][1]]  // Northeast coordinates
+
+            ], {
+              padding: { top: 10, bottom:10, left: 10, right: 10  }
+
+            });
+            if (endpoint) {
+              fetch(endpoint)
+              .then((response) => response.json())
+              .then((data) => this.setData(data))
+              .catch((error) => {
+                console.error("Error loading map data:", error);
+              });
+            }
+          });
   }
 
   setData(data) {
@@ -166,123 +179,143 @@ export class OSMap extends HTMLElement {
     const uniquePopupImages = [
       ...new Set(data.features.map((f) => f.properties.image)),
     ].filter(Boolean);
-    const preloadImages = (images) => {
-      images.forEach((imageUrl) => {
-        const img = new Image();
-        img.src = imageUrl;
-      });
-    };
-    preloadImages(uniquePopupImages);
+      const preloadImages = (images) => {
+        images.forEach((imageUrl) => {
+          const img = new Image();
+          img.src = imageUrl;
+        });
+      };
+      preloadImages(uniquePopupImages);
 
-    // Load map icons
-    const uniqueIcons = [
-      ...new Set(data.features.map((f) => f.properties.iconUrl)),
-    ].filter(Boolean);
-    const loadIconPromises = uniqueIcons.map(
-      (iconUrl) =>
-        new Promise((resolve, reject) => {
-          if (!map.hasImage(iconUrl)) {
-            map.loadImage(iconUrl, (error, image) => {
-              if (error) reject(error);
-              if (image) {
-                map.addImage(iconUrl, image);
-              }
+      // Load map icons
+      const uniqueIcons = [
+        ...new Set(data.features.map((f) => f.properties.iconUrl)),
+      ].filter(Boolean);
+        const loadIconPromises = uniqueIcons.map(
+          (iconUrl) =>
+          new Promise((resolve, reject) => {
+            if (!map.hasImage(iconUrl)) {
+              map.loadImage(iconUrl, (error, image) => {
+                if (error) reject(error);
+                if (image) {
+                  map.addImage(iconUrl, image);
+                }
+                resolve();
+              });
+            } else {
               resolve();
-            });
-          } else {
-            resolve();
-          }
-        }),
-    );
-
-    Promise.all(loadIconPromises)
-      .then(() => {
-        if (map.getSource("locations")) {
-          const filteredData = this.getFilteredData();
-          map.getSource("locations").setData(filteredData);
-          return;
-        }
-
-        map.addImage("location-icon", arrowDownIcon);
-        map.addControl(
-          new mapboxgl.NavigationControl({ showCompass: false }),
-          "bottom-right",
+            }
+          }),
         );
 
-        map.addSource("locations", {
-          type: "geojson",
-          data: data,
-          cluster: true,
-          clusterMaxZoom: 14,
-          clusterRadius: 40,
+        Promise.all(loadIconPromises)
+        .then(() => {
+          if (map.getSource("locations")) {
+            const filteredData = this.getFilteredData();
+            map.getSource("locations").setData(filteredData);
+            return;
+          }
+
+          map.addImage("location-icon", arrowDownIcon);
+          map.addControl(
+            new mapboxgl.NavigationControl({ showCompass: false }),
+            "bottom-right",
+          );
+
+          map.addSource("locations", {
+            type: "geojson",
+            data: data,
+            cluster: true,
+            clusterMaxZoom: 14,
+            clusterRadius: 40,
+          });
+
+          map.addLayer({
+            id: "clusters",
+            type: "circle",
+            source: "locations",
+            filter: ["has", "point_count"],
+            paint: {
+              "circle-color": [
+                "step",
+                ["get", "point_count"],
+                "#E2231A",
+                1,
+                "#E2231A",
+              ],
+              "circle-radius": [
+                "step",
+                ["get", "point_count"],
+                16,
+                2,
+                20,
+                3,
+                24,
+                4,
+                28,
+                5,
+                32,
+              ],
+            },
+          });
+
+          map.addLayer({
+            id: "cluster-count",
+            type: "symbol",
+            source: "locations",
+            filter: ["has", "point_count"],
+            layout: {
+              "text-field": ["get", "point_count_abbreviated"],
+              "text-font": ["DIN Offc Pro Medium", "Arial Unicode MS Bold"],
+              "text-size": 20,
+            },
+            paint: {
+              "text-color": "#fff",
+            },
+          });
+
+          map.addLayer({
+            id: "unclustered-point",
+            type: "symbol",
+            source: "locations",
+            filter: ["!", ["has", "point_count"]],
+            layout: {
+              "icon-image": ["get", "iconUrl"],
+              "icon-size": 0.8,
+              "icon-allow-overlap": true,
+            },
+          });
+
+          const viewport = new WebMercatorViewport({
+            width: 1500,
+            height: 800,
+            longitude: mapLongitude || 0,
+            latitude: mapLatitude || 0,
+            zoom: mapZoom || 0,
+          });
+          this.bounds = viewport.getBounds();
+          window.console.log("Initial load")
+          if (this.bounds) {
+            window.console.log(container.clientWidth, container.clientHeight);
+            window.console.log(this.bounds);
+
+            //map.fitBounds(this.bounds);
+            this.map.fitBounds([
+              [this.bounds[0][0], this.bounds[0][1]], // Southwest coordinates
+              [this.bounds[1][0], this.bounds[1][1]]  // Northeast coordinates
+
+            ], {
+              padding: { top: 10, bottom:10, left: 10, right: 10  }
+
+            });
+          }
+
+          this.setupEventHandlers();
+          this.setupFilters();
+        })
+        .catch((error) => {
+          console.error("Error loading icons:", error);
         });
-
-        map.addLayer({
-          id: "clusters",
-          type: "circle",
-          source: "locations",
-          filter: ["has", "point_count"],
-          paint: {
-            "circle-color": [
-              "step",
-              ["get", "point_count"],
-              "#E2231A",
-              1,
-              "#E2231A",
-            ],
-            "circle-radius": [
-              "step",
-              ["get", "point_count"],
-              16,
-              2,
-              20,
-              3,
-              24,
-              4,
-              28,
-              5,
-              32,
-            ],
-          },
-        });
-
-        map.addLayer({
-          id: "cluster-count",
-          type: "symbol",
-          source: "locations",
-          filter: ["has", "point_count"],
-          layout: {
-            "text-field": ["get", "point_count_abbreviated"],
-            "text-font": ["DIN Offc Pro Medium", "Arial Unicode MS Bold"],
-            "text-size": 20,
-          },
-          paint: {
-            "text-color": "#fff",
-          },
-        });
-
-        map.addLayer({
-          id: "unclustered-point",
-          type: "symbol",
-          source: "locations",
-          filter: ["!", ["has", "point_count"]],
-          layout: {
-            "icon-image": ["get", "iconUrl"],
-            "icon-size": 0.8,
-            "icon-allow-overlap": true,
-          },
-        });
-
-        if (this.bounds) {
-           map.fitBounds(this.bounds);
-        }
-
-        this.setupEventHandlers();
-        this.setupFilters();
-      })
-      .catch((error) => {
-        console.error("Error loading icons:", error);
-      });
   }
 
   getFilteredData() {
@@ -305,8 +338,8 @@ export class OSMap extends HTMLElement {
     return this.selectedTypes.length === 0 &&
       this.selectedSizes.length === 0 &&
       this.selectedStates.length === 0
-      ? this.originalData
-      : filteredData;
+        ? this.originalData
+        : filteredData;
   }
 
   setupFilters() {
@@ -361,23 +394,23 @@ export class OSMap extends HTMLElement {
       const dropdownItems = [
         ...new Set(
           this.originalData.features
-            .map((feature) => {
-              return feature.properties[type];
-            })
-            .sort(),
+          .map((feature) => {
+            return feature.properties[type];
+          })
+          .sort(),
         ),
       ];
 
       dropdownItems.forEach((value) => {
         const itemHTML = `
-          <label class="os-map-dropdown-item">
-            <input type="checkbox" value="${value}" />
-            <span class="os-map-empty-checkbox"></span>
-            <span class="os-map-check-icon"></span>
-            <span class="${type === "type" ? "os-map-badge " + value.toLowerCase() : ""}">
-              ${type === "state" ? stateMapper[value.trim()] : value}
-            </span>
-          </label>
+        <label class="os-map-dropdown-item">
+        <input type="checkbox" value="${value}" />
+        <span class="os-map-empty-checkbox"></span>
+        <span class="os-map-check-icon"></span>
+        <span class="${type === "type" ? "os-map-badge " + value.toLowerCase() : ""}">
+        ${type === "state" ? stateMapper[value.trim()] : value}
+        </span>
+        </label>
         `;
         menuList.innerHTML += itemHTML;
       });
@@ -474,7 +507,28 @@ export class OSMap extends HTMLElement {
       window.addEventListener("resize", () => {
         clearTimeout(debounceTimer);
         debounceTimer = setTimeout(() => {
-           map.fitBounds(this.bounds);
+
+          const viewport = new WebMercatorViewport({
+            width: 1500,
+            height: 800,
+            longitude: mapLongitude || 0,
+            latitude: mapLatitude || 0,
+            zoom: mapZoom || 0,
+          });
+          this.bounds1 = viewport.getBounds();
+          window.console.log("setupEventHandlers")
+          window.console.log(container.clientWidth, container.clientHeight);
+          window.console.log(this.bounds);
+          window.console.log("resizing the window to bounds")
+          //map.fitBounds(this.bounds);
+          this.map.fitBounds([
+            [this.bounds1[0][0], this.bounds1[0][1]], // Southwest coordinates
+            [this.bounds1[1][0], this.bounds1[1][1]]  // Northeast coordinates
+
+          ], {
+            padding: { top: 10, bottom:10, left: 10, right: 10  }
+
+          });
         }, 300);
       });
     }
@@ -488,9 +542,9 @@ export class OSMap extends HTMLElement {
         offset: 20,
         maxWidth: viewportWidth > 600 ? "350px" : "250px",
       })
-        .setLngLat(coordinates)
-        .setHTML(this.buildPopupContent(properties))
-        .addTo(map);
+      .setLngLat(coordinates)
+      .setHTML(this.buildPopupContent(properties))
+      .addTo(map);
     };
 
     map.on("click", "clusters", (e) => {
@@ -549,99 +603,99 @@ export class OSMap extends HTMLElement {
       });
 
       map
-        .getSource("locations")
-        .getClusterLeaves(clusterId, 100, 0, (err, clusterFeatures) => {
-          if (err) return;
+      .getSource("locations")
+      .getClusterLeaves(clusterId, 100, 0, (err, clusterFeatures) => {
+        if (err) return;
 
-          const pointCount = clusterFeatures.length;
-          const currentZoom = map.getZoom();
-          const radius =
-            (10 / Math.pow(2, currentZoom)) * Math.log2(pointCount + 1);
-          const latitudeAdjustment = Math.cos(
-            (clusterCenter[1] * Math.PI) / 180,
-          );
+        const pointCount = clusterFeatures.length;
+        const currentZoom = map.getZoom();
+        const radius =
+          (10 / Math.pow(2, currentZoom)) * Math.log2(pointCount + 1);
+        const latitudeAdjustment = Math.cos(
+          (clusterCenter[1] * Math.PI) / 180,
+        );
 
-          clusterFeatures = clusterFeatures.map((feature, index) => {
-            const angle = (index / clusterFeatures.length) * 2 * Math.PI;
-            const newLng =
-              clusterCenter[0] +
-              (radius * Math.cos(angle)) / latitudeAdjustment;
-            const newLat = clusterCenter[1] + radius * Math.sin(angle);
+        clusterFeatures = clusterFeatures.map((feature, index) => {
+          const angle = (index / clusterFeatures.length) * 2 * Math.PI;
+          const newLng =
+            clusterCenter[0] +
+            (radius * Math.cos(angle)) / latitudeAdjustment;
+          const newLat = clusterCenter[1] + radius * Math.sin(angle);
 
-            return {
-              ...feature,
-              geometry: {
-                ...feature.geometry,
-                coordinates: [newLng, newLat],
-              },
-            };
-          });
-
-          const expandedClusterSource = {
-            type: "geojson",
-            data: {
-              type: "FeatureCollection",
-              features: clusterFeatures,
+          return {
+            ...feature,
+            geometry: {
+              ...feature.geometry,
+              coordinates: [newLng, newLat],
             },
           };
-
-          const linesData = {
-            type: "FeatureCollection",
-            features: clusterFeatures.map((feature) => ({
-              type: "Feature",
-              geometry: {
-                type: "LineString",
-                coordinates: [clusterCenter, feature.geometry.coordinates],
-              },
-            })),
-          };
-
-          if (!map.getSource("cluster-lines")) {
-            map.addSource("cluster-lines", {
-              type: "geojson",
-              data: linesData,
-            });
-
-            map.addLayer({
-              id: "cluster-lines-layer",
-              type: "line",
-              source: "cluster-lines",
-              layout: {
-                "line-cap": "round",
-                "line-join": "round",
-              },
-              paint: {
-                "line-color": "#666",
-                "line-width": 1,
-                "line-opacity": 0.8,
-                "line-dasharray": [1, 2],
-              },
-            });
-          } else {
-            map.getSource("cluster-lines").setData(linesData);
-          }
-
-          if (!map.getSource("expanded-cluster")) {
-            map.addSource("expanded-cluster", expandedClusterSource);
-
-            map.addLayer({
-              id: "expanded-cluster-points",
-              type: "symbol",
-              source: "expanded-cluster",
-              layout: {
-                "icon-image": ["get", "iconUrl"],
-                "icon-size": 0.8,
-                "icon-allow-overlap": true,
-              },
-            });
-
-            map.on("click", "expanded-cluster-points", openPopup);
-          } else {
-            map
-              .getSource("expanded-cluster")
-              .setData(expandedClusterSource.data);
-          }
         });
+
+        const expandedClusterSource = {
+          type: "geojson",
+          data: {
+            type: "FeatureCollection",
+            features: clusterFeatures,
+          },
+        };
+
+        const linesData = {
+          type: "FeatureCollection",
+          features: clusterFeatures.map((feature) => ({
+            type: "Feature",
+            geometry: {
+              type: "LineString",
+              coordinates: [clusterCenter, feature.geometry.coordinates],
+            },
+          })),
+        };
+
+        if (!map.getSource("cluster-lines")) {
+          map.addSource("cluster-lines", {
+            type: "geojson",
+            data: linesData,
+          });
+
+          map.addLayer({
+            id: "cluster-lines-layer",
+            type: "line",
+            source: "cluster-lines",
+            layout: {
+              "line-cap": "round",
+              "line-join": "round",
+            },
+            paint: {
+              "line-color": "#666",
+              "line-width": 1,
+              "line-opacity": 0.8,
+              "line-dasharray": [1, 2],
+            },
+          });
+        } else {
+          map.getSource("cluster-lines").setData(linesData);
+        }
+
+        if (!map.getSource("expanded-cluster")) {
+          map.addSource("expanded-cluster", expandedClusterSource);
+
+          map.addLayer({
+            id: "expanded-cluster-points",
+            type: "symbol",
+            source: "expanded-cluster",
+            layout: {
+              "icon-image": ["get", "iconUrl"],
+              "icon-size": 0.8,
+              "icon-allow-overlap": true,
+            },
+          });
+
+          map.on("click", "expanded-cluster-points", openPopup);
+        } else {
+          map
+          .getSource("expanded-cluster")
+          .setData(expandedClusterSource.data);
+        }
+      });
     });
 
     map.on("click", "unclustered-point", openPopup);
@@ -687,19 +741,19 @@ export class OSMap extends HTMLElement {
 
   buildPopupContent(properties) {
     return `
-      <img class="os-map-popup-content-image" src="${properties.image}" />
-      <div class="os-map-popup-content-description">
-        <span class="os-map-badge ${properties.type.toLowerCase()}">${properties.type}</span>
-        <h3>${properties.name}</h3>
-        <div class="os-map-popup-content-footer">
-          <div class="os-map-popup-content-footer-item">
-            <img class="os-map-popup-content-icon" src="${chargerIcon}" /><span>${properties.size}</span>
-          </div>
-          <div class="os-map-popup-content-footer-item">
-            <img class="os-map-popup-content-icon" src="${locationIcon}" /><span>${properties.city}, ${properties.state}</span>
-          </div>
-        </div>
-      </div>
+    <img class="os-map-popup-content-image" src="${properties.image}" />
+    <div class="os-map-popup-content-description">
+    <span class="os-map-badge ${properties.type.toLowerCase()}">${properties.type}</span>
+    <h3>${properties.name}</h3>
+    <div class="os-map-popup-content-footer">
+    <div class="os-map-popup-content-footer-item">
+    <img class="os-map-popup-content-icon" src="${chargerIcon}" /><span>${properties.size}</span>
+    </div>
+    <div class="os-map-popup-content-footer-item">
+    <img class="os-map-popup-content-icon" src="${locationIcon}" /><span>${properties.city}, ${properties.state}</span>
+    </div>
+    </div>
+    </div>
     `;
   }
 }
