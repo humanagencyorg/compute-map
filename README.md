@@ -122,10 +122,16 @@ The `<os-map>` component provides the following CSS classes for custom styling. 
 - `.os-map-dropdown` - Individual dropdown container
 - `.os-map-dropdown-toggle` - Dropdown button
 - `.os-map-dropdown-menu` - Dropdown content panel
+- `.os-map-dropdown-menu-list` - Dropdown content list
+- `.os-map-dropdown-menu-header` - Dropdown header
+- `.os-map-dropdown-menu-footer` - Dropdown footer
 - `.os-map-dropdown-item` - Individual dropdown option
 - `.os-map-empty-checkbox` - Unchecked checkbox style
 - `.os-map-check-icon` - Checked checkbox style
 - `.os-map-arrow` - Dropdown arrow indicator
+- `.os-map-filter-reset-button` - Filter reset button
+- `.os-map-filter-count` - Selected items count
+- `.os-map-dropdown-close-button` - Dropdown close button
 - `#os-map-filter-size .os-map-dropdown-menu` - Dropdown content panel for filtering by size
 - `#os-map-filter-state .os-map-dropdown-menu` - Dropdown content panel for filtering by state
 

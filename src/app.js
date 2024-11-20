@@ -318,7 +318,7 @@ export class OSMap extends HTMLElement {
       const dropdownMenu = container.querySelector(".os-map-dropdown-menu");
       const menuList = container.querySelector(".os-map-dropdown-menu-list");
       const closeButton = container.querySelector(
-        ".os-map-filter-close-button",
+        ".os-map-dropdown-close-button",
       );
       const resetButton = container.querySelector(
         ".os-map-filter-reset-button",
