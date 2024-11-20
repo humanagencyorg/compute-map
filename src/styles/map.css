@@ -326,7 +326,14 @@ os-map {
   }
 
   .mapboxgl-popup {
+    opacity: 0;
     z-index: 2;
+
+    transition: opacity 0.3s ease;
+  }
+
+  .mapboxgl-popup.open {
+    opacity: 1;
   }
 
   .mapboxgl-popup-content {

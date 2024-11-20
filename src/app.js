@@ -488,13 +488,18 @@ export class OSMap extends HTMLElement {
       const properties = e.features[0].properties;
       const viewportWidth = window.innerWidth;
 
-      new mapboxgl.Popup({
+      const popup = new mapboxgl.Popup({
         offset: 20,
         maxWidth: viewportWidth > 600 ? "350px" : "250px",
       })
         .setLngLat(coordinates)
         .setHTML(this.buildPopupContent(properties))
         .addTo(map);
+
+      popup.addClassName("open");
+      popup.on("close", () => {
+        popup.removeClassName("open");
+      });
     };
 
     map.on("click", "clusters", (e) => {
