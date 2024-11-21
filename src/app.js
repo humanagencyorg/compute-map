@@ -472,7 +472,7 @@ export class OSMap extends HTMLElement {
 
   setupEventHandlers() {
     const map = this.map;
-    const transitionDuration = 200;
+    const transitionDuration = 100;
     let expandedCluster = null;
 
     if (this.viewportBounds) {
@@ -496,14 +496,14 @@ export class OSMap extends HTMLElement {
         offset: 20,
         closeOnClick: this.hoverDelay ? false : true,
         openingAnimation: {
-          duration: 200,
+          duration: transitionDuration,
           easing: "easeInSine",
           transform: "scale",
         },
         closingAnimation: {
-          duration: 200,
+          duration: transitionDuration,
           easing: "easeInOutSine",
-          transform: "scale",
+          transform: "opacity",
         },
         maxWidth: viewportWidth > 600 ? "350px" : "250px",
       })
