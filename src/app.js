@@ -2,6 +2,7 @@ import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import gjv from "geojson-validation";
 import AnimatedPopup from "mapbox-gl-animated-popup";
+import isMobile from "is-mobile";
 
 import mapStyles from "./styles/map.css";
 import typeDropdown from "./dropdowns/filter-type.html";
@@ -20,6 +21,7 @@ export class OSMap extends HTMLElement {
   originalData = null;
   viewportBounds = null;
   mapRefocus = false;
+  hoverDelay = null;
   selectedTypes = [];
   selectedSizes = [];
   selectedStates = [];
@@ -78,6 +80,9 @@ export class OSMap extends HTMLElement {
     const mapRefocusAttrValue =
       hasMapRefocusAttr && this.getAttribute("data-os-map-refocus");
     this.mapRefocus = hasMapRefocusAttr && mapRefocusAttrValue !== "false";
+    this.hoverDelay = !isMobile({ tablet: true })
+      ? parseFloat(this.getAttribute("data-os-map-hover-delay"))
+      : null;
 
     const mapCenter =
       mapLongitude && mapLatitude ? [mapLongitude, mapLatitude] : null;
@@ -487,8 +492,9 @@ export class OSMap extends HTMLElement {
       const properties = e.features[0].properties;
       const viewportWidth = window.innerWidth;
 
-      new AnimatedPopup({
+      const popup = new AnimatedPopup({
         offset: 20,
+        closeOnClick: this.hoverDelay ? false : true,
         openingAnimation: {
           duration: 200,
           easing: "easeInSine",
@@ -504,15 +510,17 @@ export class OSMap extends HTMLElement {
         .setLngLat(coordinates)
         .setHTML(this.buildPopupContent(properties))
         .addTo(map);
+
+      return popup;
     };
 
-    function animateCircleRadius(
+    const animateCircleRadius = (
       layerId,
       clusterId,
       startRadius,
       endRadius,
       duration,
-    ) {
+    ) => {
       const steps = 10; // Number of animation steps
       const interval = duration / steps; // Duration per step
       const radiusDelta = (endRadius - startRadius) / steps;
@@ -551,7 +559,7 @@ export class OSMap extends HTMLElement {
           clearInterval(intervalId);
         }
       }, interval);
-    }
+    };
 
     // Hide expanded cluster and lines on map click
     map.on("click", (e) => {
@@ -711,7 +719,11 @@ export class OSMap extends HTMLElement {
               },
             });
 
-            map.on("click", "expanded-cluster-points", openPopup);
+            if (this.hoverDelay) {
+              showPopupOnHover("expanded-cluster-points");
+            } else {
+              map.on("click", "expanded-cluster-points", openPopup);
+            }
           } else {
             map
               .getSource("expanded-cluster")
@@ -720,7 +732,48 @@ export class OSMap extends HTMLElement {
         });
     });
 
-    map.on("click", "unclustered-point", openPopup);
+    const showPopupOnHover = (layerId) => {
+      let popup;
+      let isPopupHovered = false;
+
+      map.on("mouseenter", layerId, (e) => {
+        setTimeout(() => {
+          if (!popup) {
+            popup = openPopup(e);
+
+            // Add event listeners for the popup itself
+            const popupElement = popup.getElement();
+            popupElement.addEventListener("mouseenter", () => {
+              isPopupHovered = true;
+            });
+            popupElement.addEventListener("mouseleave", () => {
+              isPopupHovered = false;
+              setTimeout(() => {
+                if (!isPopupHovered) {
+                  popup?.remove();
+                  popup = null;
+                }
+              }, this.hoverDelay);
+            });
+          }
+        }, this.hoverDelay);
+      });
+
+      map.on("mouseleave", layerId, () => {
+        setTimeout(() => {
+          if (!isPopupHovered) {
+            popup?.remove();
+            popup = null;
+          }
+        }, 200);
+      });
+    };
+
+    if (this.hoverDelay) {
+      showPopupOnHover("unclustered-point");
+    } else {
+      map.on("click", "unclustered-point", openPopup);
+    }
 
     // Clean up expanded clusters when zooming
     map.on("zoom", () => {
