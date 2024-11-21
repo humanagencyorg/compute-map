@@ -326,14 +326,7 @@ os-map {
   }
 
   .mapboxgl-popup {
-    opacity: 0;
     z-index: 2;
-
-    transition: opacity 0.3s ease;
-  }
-
-  .mapboxgl-popup.open {
-    opacity: 1;
   }
 
   .mapboxgl-popup-content {
@@ -462,6 +455,10 @@ os-map {
   .mapboxgl-ctrl-group button:first-child {
     border-radius: 0;
     border-right: 0;
+  }
+
+  .mapboxgl-ctrl-bottom-right {
+    z-index: 0;
   }
 
   .mapboxgl-ctrl-bottom-right .mapboxgl-ctrl {
