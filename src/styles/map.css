@@ -11,6 +11,10 @@ os-map {
   line-height: normal;
 }
 
+.os-hidden {
+  display: none;
+}
+
 .os-map-container {
   position: relative;
   height: 1000px;
@@ -212,6 +216,13 @@ os-map {
     position: absolute;
     top: 0;
     bottom: 0;
+    width: inherit;
+    height: inherit;
+  }
+
+  .mapboxgl-canvas-container {
+    width: inherit;
+    height: inherit;
   }
 
   .mapboxgl-popup-content {

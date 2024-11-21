@@ -28,6 +28,13 @@ export class OSMap extends HTMLElement {
   }
 
   connectedCallback() {
+    if (!mapboxgl.supported()) {
+      this.querySelectorAll(".os-hidden").forEach((el) => {
+        el.classList.remove("os-hidden");
+      });
+
+      return;
+    }
     // Add default styles if they haven't been added yet
     if (!OSMap.defaultStylesAdded) {
       document.head.insertAdjacentHTML("afterbegin", this.defaultStyles);
