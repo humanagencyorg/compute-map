@@ -32,7 +32,7 @@ export class OSMap extends HTMLElement {
     if (mapboxgl.supported()) {
       // Hide fallback content
       Array.from(this.children).forEach((el) => {
-         el.classList.add("os-hidden");
+        el.classList.add("os-hidden");
       });
     } else {
       return;
@@ -57,6 +57,8 @@ export class OSMap extends HTMLElement {
     const mapLatitude = parseFloat(this.getAttribute("data-os-map-lat"));
     const mapLongitude = parseFloat(this.getAttribute("data-os-map-lng"));
     const mapZoom = parseFloat(this.getAttribute("data-os-map-zoom"));
+    const minZoom = parseFloat(this.getAttribute("data-os-map-zoom-min"));
+    const maxZoom = parseFloat(this.getAttribute("data-os-map-zoom-max"));
     const mapBoundWest = parseFloat(
       this.getAttribute("data-os-map-bound-west"),
     );
@@ -132,14 +134,16 @@ export class OSMap extends HTMLElement {
       center: mapCenter,
       zoom: mapZoom || 0,
       style: mapStyle,
+      doubleClickZoom: false,
       cooperativeGestures: hasMapLockAttribute && mapLock !== "false",
-      scrollZoom: !mapLock,
       projection: {
         name: availableMapProjections.includes(mapProjection)
           ? mapProjection
           : "mercator",
       },
       maxBounds: maxBounds,
+      minZoom: minZoom || 0,
+      maxZoom: maxZoom || 22,
     });
 
     this.map.on("load", () => {
@@ -578,21 +582,42 @@ export class OSMap extends HTMLElement {
             (clusterCenter[1] * Math.PI) / 180,
           );
 
-          clusterFeatures = clusterFeatures.map((feature, index) => {
-            const angle = (index / clusterFeatures.length) * 2 * Math.PI;
-            const newLng =
-              clusterCenter[0] +
-              (radius * Math.cos(angle)) / latitudeAdjustment;
-            const newLat = clusterCenter[1] + radius * Math.sin(angle);
+          const normalize = (value) => {
+            return value?.toLowerCase().trim();
+          };
 
-            return {
-              ...feature,
-              geometry: {
-                ...feature.geometry,
-                coordinates: [newLng, newLat],
-              },
-            };
-          });
+          clusterFeatures = clusterFeatures
+            .sort((a, b) => {
+              const cityA = normalize(a.properties.city);
+              const cityB = normalize(b.properties.city);
+              const nameA = normalize(a.properties.name);
+              const nameB = normalize(b.properties.name);
+
+              if (cityA + " " + nameA < cityB + " " + nameB) return -1;
+              if (cityA + " " + nameA > cityB + " " + nameB) return 1;
+
+              return 0;
+            })
+            .map((feature, index) => {
+              const angle =
+                ((clusterFeatures.length - index) / clusterFeatures.length) *
+                  2 *
+                  Math.PI +
+                Math.PI / 2;
+
+              const newLng =
+                clusterCenter[0] +
+                (radius * Math.cos(angle)) / latitudeAdjustment;
+              const newLat = clusterCenter[1] + radius * Math.sin(angle);
+
+              return {
+                ...feature,
+                geometry: {
+                  ...feature.geometry,
+                  coordinates: [newLng, newLat],
+                },
+              };
+            });
 
           const expandedClusterSource = {
             type: "geojson",
