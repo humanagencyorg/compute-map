@@ -572,21 +572,13 @@ export class OSMap extends HTMLElement {
 
           clusterFeatures = clusterFeatures
             .sort((a, b) => {
-              const typeA = a.properties.type.toLowerCase();
-              const typeB = b.properties.type.toLowerCase();
               const cityA = a.properties.city.toLowerCase();
               const cityB = b.properties.city.toLowerCase();
               const nameA = a.properties.name.toLowerCase();
               const nameB = b.properties.name.toLowerCase();
 
-              if (typeA < typeB) return -1;
-              if (typeA > typeB) return 1;
-
-              if (cityA < cityB) return -1;
-              if (cityA > cityB) return 1;
-
-              if (nameA < nameB) return -1;
-              if (nameA > nameB) return 1;
+              if (cityA + " " + nameA < cityB + " " + nameB) return -1;
+              if (cityA + " " + nameA > cityB + " " + nameB) return 1;
 
               return 0;
             })
