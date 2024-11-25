@@ -484,6 +484,7 @@ export class OSMap extends HTMLElement {
 
   setupEventHandlers() {
     const map = this.map;
+    let expandedCircle = null;
 
     if (this.viewportBounds) {
       let debounceTimer;
@@ -516,13 +517,16 @@ export class OSMap extends HTMLElement {
       });
     };
 
+    map.on("click", "unclustered-point", openPopup);
+    map.on("click", "expanded-cluster-points", openPopup);
+
     // Hide expanded cluster and lines on map click
     map.on("click", (e) => {
       const features = map.queryRenderedFeatures(e.point, {
-        layers: ["expanded-cluster-points"],
+        layers: ["clusters", "expanded-cluster-points"],
       });
 
-      if (features.length === 0) {
+      if (features.length === 0 && expandedCircle) {
         if (map.getSource("expanded-cluster")) {
           map.getSource("expanded-cluster").setData({
             type: "FeatureCollection",
@@ -538,14 +542,38 @@ export class OSMap extends HTMLElement {
         }
 
         map.setFilter("clusters", ["has", "point_count"]);
-        map.setPaintProperty("clusters", "circle-opacity", 1);
-        map.setPaintProperty("cluster-count", "text-opacity", 1);
         map.setLayoutProperty("unclustered-point", "icon-allow-overlap", true);
+
+        // Add fade-in animation
+        let opacity = 0;
+        const clusterFilter = ["within", expandedCircle];
+        const fadeInClusters = () => {
+          if (opacity < 1) {
+            opacity += 0.05;
+            map.setPaintProperty("clusters", "circle-opacity", [
+              "case",
+              clusterFilter,
+              opacity,
+              1,
+            ]);
+            map.setPaintProperty("cluster-count", "text-opacity", [
+              "case",
+              clusterFilter,
+              opacity,
+              1,
+            ]);
+            requestAnimationFrame(fadeInClusters);
+          } else {
+            // Reset to default state
+            map.setPaintProperty("clusters", "circle-opacity", 1);
+            map.setPaintProperty("cluster-count", "text-opacity", 1);
+            expandedCircle = null;
+          }
+        };
+        fadeInClusters();
       }
     });
 
-    map.on("click", "unclustered-point", openPopup);
-    map.on("click", "expanded-cluster-points", openPopup);
     map.on("click", "clusters", (e) => {
       const features = map.queryRenderedFeatures(e.point, {
         layers: ["clusters"],
@@ -634,7 +662,7 @@ export class OSMap extends HTMLElement {
             units: "kilometers",
           });
           const circleRadius = lineDistance * 1.8;
-          const circleFeature = turf.circle(clusterCenter, circleRadius, {
+          expandedCircle = turf.circle(clusterCenter, circleRadius, {
             units: "kilometers",
           });
 
@@ -642,11 +670,11 @@ export class OSMap extends HTMLElement {
           const clusterFilter = [
             "all",
             ["!=", ["get", "cluster_id"], clusterId],
-            ["within", circleFeature],
+            ["within", expandedCircle],
           ];
 
           // Animate fade out of clusters
-          let opacity = 1.0;
+          let opacity = 1;
           const fadeOutClusters = () => {
             if (opacity > 0) {
               opacity -= 0.05; // Adjust the decrement for speed of fade
@@ -667,7 +695,7 @@ export class OSMap extends HTMLElement {
               map.setFilter("clusters", [
                 "all",
                 ["has", "point_count"],
-                ["!", ["within", circleFeature]],
+                ["!", ["within", expandedCircle]],
               ]);
             }
           };
@@ -737,6 +765,7 @@ export class OSMap extends HTMLElement {
       }
 
       // Reset cluster opacity
+      map.setFilter("clusters", ["has", "point_count"]);
       map.setPaintProperty("clusters", "circle-opacity", 1);
       map.setPaintProperty("cluster-count", "text-opacity", 1);
       map.setLayoutProperty("unclustered-point", "icon-allow-overlap", true);
