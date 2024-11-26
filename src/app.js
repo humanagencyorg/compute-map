@@ -544,10 +544,11 @@ export class OSMap extends HTMLElement {
         map.setFilter("clusters", ["has", "point_count"]);
         map.setLayoutProperty("unclustered-point", "icon-allow-overlap", true);
 
-        // Add fade-in animation
+        // Animate fade in of clusters
         let opacity = 0;
         const clusterFilter = ["within", expandedCircle];
         const fadeInClusters = () => {
+          expandedCircle = null;
           if (opacity < 1) {
             opacity += 0.05;
             map.setPaintProperty("clusters", "circle-opacity", [
@@ -563,13 +564,9 @@ export class OSMap extends HTMLElement {
               1,
             ]);
             requestAnimationFrame(fadeInClusters);
-          } else {
-            // Reset to default state
-            map.setPaintProperty("clusters", "circle-opacity", 1);
-            map.setPaintProperty("cluster-count", "text-opacity", 1);
-            expandedCircle = null;
           }
         };
+
         fadeInClusters();
       }
     });
@@ -666,15 +663,13 @@ export class OSMap extends HTMLElement {
             units: "kilometers",
           });
 
-          // Create a filter to hide clusters within the circle
+          // Animate fade out of clusters
+          let opacity = 1;
           const clusterFilter = [
             "all",
             ["!=", ["get", "cluster_id"], clusterId],
             ["within", expandedCircle],
           ];
-
-          // Animate fade out of clusters
-          let opacity = 1;
           const fadeOutClusters = () => {
             if (opacity > 0) {
               opacity -= 0.05; // Adjust the decrement for speed of fade
@@ -682,25 +677,21 @@ export class OSMap extends HTMLElement {
                 "case",
                 clusterFilter,
                 opacity,
-                ["case", ["==", ["get", "cluster_id"], clusterId], 0, 1],
+                ["case", ["within", expandedCircle], 0, 1],
               ]);
               map.setPaintProperty("cluster-count", "text-opacity", [
                 "case",
                 clusterFilter,
                 opacity,
-                ["case", ["==", ["get", "cluster_id"], clusterId], 0, 1],
+                ["case", ["within", expandedCircle], 0, 1],
               ]);
               requestAnimationFrame(fadeOutClusters);
-            } else {
-              map.setFilter("clusters", [
-                "all",
-                ["has", "point_count"],
-                ["!", ["within", expandedCircle]],
-              ]);
             }
           };
 
-          fadeOutClusters();
+          if (expandedCircle) {
+            fadeOutClusters();
+          }
 
           if (!map.getSource("cluster-lines")) {
             map.addSource("cluster-lines", {
