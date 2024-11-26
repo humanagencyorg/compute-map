@@ -577,6 +577,7 @@ export class OSMap extends HTMLElement {
       });
       const clusterId = features[0].properties.cluster_id;
       const clusterCenter = features[0].geometry.coordinates;
+      map.setFilter("clusters", ["has", "point_count"]);
 
       if (this.mapRefocus) {
         map.easeTo({
@@ -686,6 +687,12 @@ export class OSMap extends HTMLElement {
                 ["case", ["within", expandedCircle], 0, 1],
               ]);
               requestAnimationFrame(fadeOutClusters);
+            } else {
+              map.setFilter("clusters", [
+                "all",
+                ["has", "point_count"],
+                ["!", ["within", expandedCircle]],
+              ]);
             }
           };
 
