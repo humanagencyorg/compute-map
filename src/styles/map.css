@@ -210,6 +210,7 @@ os-map {
   padding: 4px 8px;
   border-radius: 40px;
   color: white;
+  background-color: #989898;
   font-size: 16px;
   font-weight: 500;
   text-transform: uppercase;
@@ -236,6 +237,10 @@ os-map {
 .os-map-badge.hyperscale {
   color: #212121;
   background-color: #ffc107;
+}
+
+.os-map-badge.large.scale {
+  background-color: #DC7D00;
 }
 
 .os-map-arrow {
