@@ -20,6 +20,8 @@ export class OSMap extends HTMLElement {
   originalData = null;
   viewportBounds = null;
   mapRefocus = false;
+  mapLegend = false;
+  mapId = null;
   selectedTypes = [];
   selectedSizes = [];
   selectedStates = [];
@@ -45,6 +47,7 @@ export class OSMap extends HTMLElement {
     }
 
     const id = this.getAttribute("data-os-map-id") || "map";
+    this.mapId = id;
     const endpoint =
       this.getAttribute("data-os-map-endpoint") ||
       this.getAttribute("data-os-endpoint");
@@ -88,6 +91,10 @@ export class OSMap extends HTMLElement {
     const mapRefocusAttrValue =
       hasMapRefocusAttr && this.getAttribute("data-os-map-refocus");
     this.mapRefocus = hasMapRefocusAttr && mapRefocusAttrValue !== "false";
+    const hasMapLegendAttr = this.hasAttribute("data-os-map-legend");
+    const mapLegendAttrValue =
+      hasMapLegendAttr && this.getAttribute("data-os-map-legend");
+    this.mapLegend = hasMapLegendAttr && mapLegendAttrValue !== "false";
 
     const mapCenter =
       mapLongitude && mapLatitude ? [mapLongitude, mapLatitude] : null;
@@ -295,6 +302,9 @@ export class OSMap extends HTMLElement {
 
         this.setupEventHandlers();
         this.setupFilters();
+        if (this.mapLegend) {
+          this.setupLegend();
+        }
       })
       .catch((error) => {
         console.error("Error loading icons:", error);
@@ -374,16 +384,7 @@ export class OSMap extends HTMLElement {
 
       dropdownMenu.addEventListener("click", (e) => e.stopPropagation());
 
-      const dropdownItems = Object.values(
-        this.originalData.features.reduce((acc, feature) => {
-          const typeValue = feature.properties[type];
-          acc[typeValue] = {
-            type: typeValue,
-            colorCode: feature.properties.colorCode,
-          };
-          return acc;
-        }, {})
-      ).sort((a, b) => a.type.localeCompare(b.type));
+      const dropdownItems = this.getUniqueSortedTypes(type);
 
       const isType = type === "type";
       dropdownItems.forEach((item) => {
@@ -482,6 +483,47 @@ export class OSMap extends HTMLElement {
         setCount(stateFilterSetup.countElement, this.selectedStates.length);
       });
     });
+  }
+
+  setupLegend() {
+    let debounceTimer;
+    const legendContainer = document.createElement("div");
+    const mapContainer = document.getElementById(this.mapId);
+    const zoomButton = document.querySelector(
+      ".mapboxgl-ctrl-zoom-in",
+    );
+    legendContainer.classList.add("os-map-legend");
+    mapContainer.appendChild(legendContainer);
+
+    const legendItems = this.getUniqueSortedTypes("type");
+    legendItems.forEach((item) => {
+      const itemHTML = `
+      <div class="os-map-legend-item">
+        <span style="background-color: ${item.colorCode};" class="os-map-legend-color ${item.type.toLowerCase()}"></span>
+        <span class="os-map-legend-text">${item.type}</span>
+      </div>
+      `;
+      legendContainer.innerHTML += itemHTML;
+    });
+
+    if (zoomButton) {
+      const setLegendPosition = () => {
+        const legendWidth = legendContainer.getBoundingClientRect().width;
+        const zoomButtonsWidth =
+          zoomButton.getBoundingClientRect().width * 3.5;
+        const mapWidth = mapContainer.getBoundingClientRect().width;
+        if (legendWidth >= mapWidth - zoomButtonsWidth) {
+          legendContainer.classList.add("os-map-legend-bottom-position");
+        } else {
+          legendContainer.classList.remove("os-map-legend-bottom-position");
+        }
+      };
+      setLegendPosition();
+      window.addEventListener("resize", () => {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(setLegendPosition, 300);
+      });
+    }
   }
 
   setupEventHandlers() {
@@ -814,6 +856,19 @@ export class OSMap extends HTMLElement {
           [east, north],
         ]
       : null;
+  }
+
+  getUniqueSortedTypes(type) {
+    return Object.values(
+      this.originalData.features.reduce((acc, feature) => {
+        const typeValue = feature.properties[type];
+        acc[typeValue] = {
+          type: typeValue,
+          colorCode: feature.properties.colorCode,
+        };
+        return acc;
+      }, {}),
+    ).sort((a, b) => a.type.localeCompare(b.type));
   }
 }
 
