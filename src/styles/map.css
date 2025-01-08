@@ -400,8 +400,9 @@ os-map {
 }
 
 .os-map-legend {
-  position: absolute;
-  bottom: 30px;
+  position: relative;
+  width: fit-content;
+  bottom: 60px;
   left: 24px;
   display: flex;
   gap: 8px;
@@ -434,8 +435,9 @@ os-map {
 }
 
 .os-map-legend-bottom-position {
-  bottom: -52px;
-  left: 12px;
+  bottom: 0;
+  left: 0;
+  padding: 12px
 }
 
 @media screen and (max-width: 480px) {
@@ -520,10 +522,6 @@ os-map {
     font-size: 16px;
     margin-top: 8px;
     margin-bottom: 12px;
-  }
-
-  .os-map-legend-bottom-position {
-    bottom: -42px;
   }
 
   .os-map-legend-text {

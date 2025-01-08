@@ -493,7 +493,7 @@ export class OSMap extends HTMLElement {
       ".mapboxgl-ctrl-zoom-in",
     );
     legendContainer.classList.add("os-map-legend");
-    mapContainer.appendChild(legendContainer);
+    this.appendChild(legendContainer);
 
     const legendItems = this.getUniqueSortedTypes("type");
     legendItems.forEach((item) => {
